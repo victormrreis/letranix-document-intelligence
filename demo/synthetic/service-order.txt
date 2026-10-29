@@ -1,0 +1,6 @@
+SYNTHETIC DEMONSTRATION - NOT AN OPERATIONAL DOCUMENT
+Organization: Example Works Lab
+Date: 2026-01-15
+Reference: DEMO-001
+Category: service-order
+Description: Inspect the fictional document scanner.
