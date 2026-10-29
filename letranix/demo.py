@@ -1,4 +1,4 @@
-"""Generate fixtures from literal, invented content. Never read an operational source."""
+"""Synthetic fixtures generated from literal, invented content. Never reads an operational source."""
 
 import hashlib
 import json
@@ -6,147 +6,181 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-from .processing import extract, media_type
-from .store import Store, now, uid
+BANNER = "SYNTHETIC DEMONSTRATION - NOT AN OPERATIONAL DOCUMENT"
 
 
-def native_pdf(lines: list[str]) -> bytes:
-    text = "BT /F1 14 Tf 50 770 Td 22 TL\n"
-    for line in lines:
-        escaped = line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-        text += f"({escaped}) Tj T*\n"
-    text += "ET"
-    stream = text.encode("ascii")
-    objects = [
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-        b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream",
-    ]
+def native_pdf(pages: list[list[str]] | list[str], font: str = "Helvetica") -> bytes:
+    """Minimal text PDF writer (one Tj per line) so fixtures need no PDF library."""
+    if pages and isinstance(pages[0], str):
+        pages = [pages]
+    objects = [b"<< /Type /Catalog /Pages 2 0 R >>", b""]
+    kids = []
+    font_id = 3
+    objects.append(f"<< /Type /Font /Subtype /Type1 /BaseFont /{font} >>".encode())
+    for lines in pages:
+        text = "BT /F1 11 Tf 50 780 Td 16 TL\n"
+        for line in lines:
+            escaped = line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+            text += f"({escaped}) Tj T*\n"
+        stream = (text + "ET").encode("latin-1")
+        objects.append(b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream")
+        content_id = len(objects)
+        objects.append(
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 {font_id} 0 R >> >> "
+            f"/Contents {content_id} 0 R >>".encode()
+        )
+        kids.append(len(objects))
+    objects[1] = f"<< /Type /Pages /Kids [{' '.join(f'{k} 0 R' for k in kids)}] /Count {len(kids)} >>".encode()
     result = b"%PDF-1.4\n"
-    offsets = [0]
+    offsets = []
     for i, obj in enumerate(objects, 1):
         offsets.append(len(result))
         result += f"{i} 0 obj\n".encode() + obj + b"\nendobj\n"
     start = len(result)
-    result += b"xref\n0 6\n0000000000 65535 f \n"
-    result += b"".join(f"{n:010d} 00000 n \n".encode() for n in offsets[1:])
-    result += f"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n{start}\n%%EOF\n".encode()
+    result += f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode()
+    result += b"".join(f"{n:010d} 00000 n \n".encode() for n in offsets)
+    result += f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{start}\n%%EOF\n".encode()
     return result
 
 
-def generate(destination: Path):
-    destination.mkdir(parents=True, exist_ok=True)
-    base = [
-        "SYNTHETIC DEMONSTRATION - NOT AN OPERATIONAL DOCUMENT",
-        "Organization: Example Works Lab",
-        "Date: 2026-01-15",
+def font(size: int, handwriting: bool = False):
+    # Operating-system fonts are only rendered into pixels; no font file is redistributed.
+    candidates = (["C:/Windows/Fonts/segoepr.ttf"] if handwriting else []) + [
+        "C:/Windows/Fonts/arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
     ]
-    examples = {
-        "service-order.txt": base
-        + [
-            "Reference: DEMO-001",
-            "Category: service-order",
-            "Description: Inspect the fictional document scanner.",
-        ],
-        "operational-report.png": base
-        + [
-            "Reference: DEMO-002",
-            "Category: operational-report",
-            "Description: Synthetic equipment inspection completed.",
-        ],
-        "administrative-request.pdf": base
-        + [
-            "Reference: DEMO-003",
-            "Category: administrative-request",
-            "Description: Request fictional archive labels.",
-        ],
-        "low-quality-scan.jpg": base
-        + [
-            "Reference: DEMO-004",
-            "Category: operational-report",
-            "Description: Artificially degraded synthetic scan.",
-        ],
-        "handwritten-form.png": base
-        + [
-            "Reference: DEMO-005",
-            "Category: handwritten-form",
-            "Description: Example Operator A requests sample forms.",
-        ],
-    }
+    for path in candidates:
+        if Path(path).is_file():
+            return ImageFont.truetype(path, size)
+    return ImageFont.load_default(size=size)
+
+
+def render(lines, size=(1700, 1100), text_size=34, handwriting=False, layout=None) -> Image.Image:
+    """Render lines (or (x, y, text) tuples when ``layout`` is given) onto a page."""
+    im = Image.new("RGB", size, "#fbfaf6")
+    draw = ImageDraw.Draw(im)
+    f = font(text_size, handwriting)
+    draw.rectangle((24, 24, size[0] - 24, size[1] - 24), outline="#b9bec6", width=2)
+    if layout:
+        for x, y, text in layout:
+            draw.text((x, y), text, font=f, fill="#1b2a41")
+    else:
+        for i, line in enumerate(lines):
+            draw.text((60, 60 + i * int(text_size * 1.9)), line, font=f, fill="#1b2a41")
+    return im
+
+
+SERVICE_ORDER = [
+    BANNER,
+    "SERVICE ORDER",
+    "Order No.: SO-10423",
+    "Requested by: Ana Exemplo",
+    "Location: Fictional Building 7",
+    "Date: 15/03/2026",
+    "Due date: 2026-03-29",
+    "Priority: High",
+    "Description: Replace the fictional air filter in room 12.",
+]
+
+INVOICE = [
+    BANNER,
+    "INVOICE",
+    "Invoice No.: INV-2087",
+    "Issuer: Example Works Lab",
+    "Bill to: Sample Trading Co.",
+    "Issue date: 02 Apr 2026",
+    "Due date: 2026-05-02",
+    "",
+    "Description            Qty    Unit price    Amount",
+    "Archive labels          10          2.50     25.00",
+    "Scanner calibration      1        180.00    180.00",
+    "Document boxes           4         12.25     49.00",
+    "",
+    "Total: $254.00",
+]
+
+INSPECTION = [
+    BANNER,
+    "INSPECTION REPORT",
+    "Report ID: IR-3310",
+    "Site: Demo Plant North",
+    "Inspector: Bruno Ficticio",
+    "Date: 2026-02-20",
+    "Result: Pass",
+    "Notes: Synthetic pressure gauge within range.",
+]
+
+REQUEST_P1 = [
+    BANNER,
+    "ADMINISTRATIVE REQUEST",
+    "Protocol: AR-5521",
+    "Requester: Carla Modelo",
+    "Department: Records Office",
+    "Date: 10/01/2026",
+]
+REQUEST_P2 = [
+    "Page 2 of 2",
+    "Subject: Access to the fictional archive room",
+    "Justification: quarterly synthetic audit.",
+]
+
+FORM_LAYOUT = [
+    (60, 60, BANNER),
+    (60, 140, "SERVICE ORDER - FIELD FORM"),
+    (60, 240, "Order number"), (60, 300, "SO-20981"),
+    (760, 240, "Priority"), (760, 300, "Urgent"),
+    (60, 420, "Requester"), (60, 480, "Diego Amostra"),
+    (760, 420, "Date"), (760, 480, "2026-06-05"),
+    (60, 600, "Description"), (60, 660, "Inspect the sample conveyor belt."),
+]
+
+
+def generate(destination: Path) -> list[str]:
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / "service-order.txt").write_text("\n".join(SERVICE_ORDER) + "\n", encoding="utf-8", newline="\n")
+    (destination / "invoice.pdf").write_bytes(native_pdf(INVOICE, font="Courier"))
+
+    report = render(INSPECTION).rotate(2.0, resample=Image.BICUBIC, expand=True, fillcolor="#fbfaf6")
+    report.save(destination / "inspection-report.png")
+
+    pages = [render(REQUEST_P1).convert("L"), render(REQUEST_P2).convert("L")]
+    pages[0].save(destination / "scanned-request.pdf", save_all=True, append_images=pages[1:], resolution=150)
+
+    form = render([], size=(1500, 780), layout=FORM_LAYOUT)
+    form = form.resize((1050, 546)).filter(ImageFilter.GaussianBlur(0.6)).rotate(90, expand=True)
+    form.save(destination / "rotated-field-form.jpg", quality=60)
+
+    handwriting = render([BANNER, "Request: AR-7730", "Requester: Example Operator A",
+                          "Department: Sample Library", "Date: 2026-01-15", "Subject: Request sample forms"],
+                         text_size=30, handwriting=True)
+    handwriting.save(destination / "handwritten-style-request.png")
+
     manifest = {
         "provenance": "Created from literal invented content by letranix.demo; no source documents",
+        "handwriting_note": "Rendered handwriting-style font when available; not human handwriting.",
         "files": {},
     }
-    for name, lines in examples.items():
-        p = destination / name
-        if p.suffix == ".txt":
-            p.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
-        elif p.suffix == ".pdf":
-            p.write_bytes(native_pdf(lines))
-        else:
-            im = Image.new("RGB", (1600, 650), "#faf9f5")
-            draw = ImageDraw.Draw(im)
-            # OS font is rendered only; no font file is copied or redistributed.
-            font_path = Path("C:/Windows/Fonts/segoepr.ttf")
-            handwritten = name == "handwritten-form.png" and font_path.is_file()
-            printed_font = Path("C:/Windows/Fonts/arial.ttf")
-            if handwritten:
-                font = ImageFont.truetype(str(font_path), 27)
-            elif printed_font.is_file():
-                font = ImageFont.truetype(str(printed_font), 32)
-            else:
-                font = ImageFont.load_default(size=32)
-            draw.rectangle((25, 25, 1575, 625), outline="#c3c7cd", width=2)
-            for i, line in enumerate(lines):
-                draw.text((52, 65 + i * 72), line, font=font, fill="#182a43")
-            if name == "low-quality-scan.jpg":
-                im = im.resize((1000, 406)).filter(ImageFilter.GaussianBlur(0.5))
-                im.save(p, quality=55)
-            else:
-                im.save(p)
-            if name == "handwritten-form.png":
-                manifest["handwriting_note"] = (
-                    "Rendered handwriting-style font; not human handwriting. OCR handwriting support is experimental."
-                    if handwritten
-                    else "Fallback printed font; handwriting-style font unavailable on this host."
-                )
-        manifest["files"][name] = hashlib.sha256(p.read_bytes()).hexdigest()
-    (destination / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    return list(examples)
-
-
-def seed(data: Path, fixtures: Path):
-    names = generate(fixtures)
-    store = Store(data)
-    count = 0
+    names = sorted(p.name for p in destination.iterdir() if p.name != "manifest.json")
     for name in names:
-        raw = (fixtures / name).read_bytes()
-        digest = hashlib.sha256(raw).hexdigest()
-        with store.connect() as c:
-            if c.execute("SELECT 1 FROM documents WHERE digest=?", (digest,)).fetchone():
-                continue
-            doc_id = uid()
-            mime = media_type(raw)
-            (store.files / doc_id).write_bytes(raw)
-            c.execute(
-                "INSERT INTO documents(id,name,mime,digest,created,status) VALUES(?,?,?,?,?,?)",
-                (doc_id, name, mime, digest, now(), "imported"),
-            )
-            store.audit(
-                c, doc_id, "demo.synthetic-import", "demo-generator", {"generator": "letranix.demo"}
-            )
-            if mime in {"text/plain", "application/pdf"}:
-                result = extract(raw, mime)
-                c.execute(
-                    "UPDATE documents SET status='needs-review',version=1,text=?,method=?,fields=? WHERE id=?",
-                    (result.text, result.method, json.dumps(result.fields), doc_id),
-                )
-                c.execute(
-                    "INSERT INTO jobs(id,document_id,state,created) VALUES(?,?,?,?)",
-                    (uid(), doc_id, "done", now()),
-                )
-                store.audit(c, doc_id, "processing.completed", "system", {"method": result.method})
-        count += 1
-    return count
+        manifest["files"][name] = hashlib.sha256((destination / name).read_bytes()).hexdigest()
+    (destination / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return names
+
+
+def seed(data: Path, fixtures: Path) -> int:
+    """Import fixtures through the normal import path (dedup, audit, auto-processing)."""
+    from .service import Letranix
+
+    names = generate(fixtures)
+    svc = Letranix(data, start_workers=False)
+    try:
+        imported = 0
+        for name in names:
+            r = svc.import_bytes(name, (fixtures / name).read_bytes(), "demo-generator", via="demo")
+            imported += not r["duplicate"]
+        while svc.run_next_job():
+            pass
+        return imported
+    finally:
+        svc.close()

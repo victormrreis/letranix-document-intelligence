@@ -1,11 +1,12 @@
 {
   "provenance": "Created from literal invented content by letranix.demo; no source documents",
+  "handwriting_note": "Rendered handwriting-style font when available; not human handwriting.",
   "files": {
-    "service-order.txt": "931c31aa6b70f41a3c53b49a9d2b8d763b2a870e2ec92dcc3353c0d958769ae4",
-    "operational-report.png": "0fc38081dd7062ad9be8563b82dd00a8be4bb02706918bcb3d0005a61d5e059f",
-    "administrative-request.pdf": "24a5a6d7ad2121051eaacfeeace7ae2cca84893aa224d46f0d054db0fc6eb0a1",
-    "low-quality-scan.jpg": "63e175d43be344cf7248b4251cf169390278d687ce15d25ac9cdd5adb4eb9bd7",
-    "handwritten-form.png": "ba550296ae3448c21e43870c389d3657f47c90bf22ebf6536786350375d18809"
-  },
-  "handwriting_note": "Rendered handwriting-style font; not human handwriting. OCR handwriting support is experimental."
+    "handwritten-style-request.png": "e0eae415510e4f3ecdd95e5106b2458cf8080c1bf489ec9506b797f6c729165b",
+    "inspection-report.png": "fb7e6549f07287d2d4909770b6d79642fdcac8c95ab72de8e7804381656c9194",
+    "invoice.pdf": "5b393c1441201f97900ae36a05c9355cab64edab9119a8f24cee8fad5d566cd9",
+    "rotated-field-form.jpg": "9eb74840b793aa9746b523af5826b3c9b251441f4ec7dea07dfe33b145528691",
+    "scanned-request.pdf": "034f5820089eafbc0368da40b3ce3d400648d5f1bb47fabf6ad7115104e610e6",
+    "service-order.txt": "2613772f78ed4bed75a2f2cff9a3853fed6e79ea8cd74f4f00c3859e6b7f38f6"
+  }
 }

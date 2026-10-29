@@ -1,6 +1,9 @@
 SYNTHETIC DEMONSTRATION - NOT AN OPERATIONAL DOCUMENT
-Organization: Example Works Lab
-Date: 2026-01-15
-Reference: DEMO-001
-Category: service-order
-Description: Inspect the fictional document scanner.
+SERVICE ORDER
+Order No.: SO-10423
+Requested by: Ana Exemplo
+Location: Fictional Building 7
+Date: 15/03/2026
+Due date: 2026-03-29
+Priority: High
+Description: Replace the fictional air filter in room 12.

@@ -24,3 +24,5 @@ src-tauri/icons/*
 !src-tauri/icons/icon.ico
 !src-tauri/icons/icon.png
 *.egg-info/
+.claude/
+start-ui.cmd

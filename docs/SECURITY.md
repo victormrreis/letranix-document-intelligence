@@ -1,19 +1,37 @@
-# Security model and publication gate
+# Security model
 
-Evaluation is local and single-user. Use exclusively synthetic inputs. No application request sends document content, fields or decisions to an external provider. Dependency installation and advisory checks need network access; those tools receive package names/versions, not workspace documents.
+LETRANIX is a single-user local application. Use synthetic or otherwise non-sensitive inputs for evaluation.
 
-Controls include loopback binding, Host validation, same-origin checks, an ephemeral browser session token, no CORS grants, generated storage IDs, parameterized SQL, SHA-256 deduplication, file/text/page/image limits, attachment downloads, restrictive browser headers, transactional state checks and explicit integration authorization. React renders extracted strings as text; HTML content is never injected.
+## Controls
 
-Limitations: storage is unencrypted; the OS user can edit the database and audit records; any software running as that user can obtain a local session. The reviewer label is not authenticated. Parsers and OCR execute in the server process, without sandbox or hard CPU/memory deadline. Request bodies are bounded before multipart parsing, including chunked transfers; file content has a separate 10 MiB limit. Do not expose the service to a network or process hostile files. One process per workspace is supported.
+| Area | Control |
+|---|---|
+| Network exposure | Binds to `127.0.0.1` only. Requests with another `Host` are refused; browser requests with a foreign `Origin` are refused; no CORS headers. |
+| API access | Per-start random session token (obtained only with a custom header, which cross-site pages cannot send without CORS), required on every `/api/*` call except health. |
+| Browser hardening | Strict CSP (`script-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`), `nosniff`, `no-referrer`, `no-store`; originals are served as attachments; extracted text is rendered as text, never HTML. |
+| Input handling | Content-based type detection; 50 MiB request cap enforced before multipart parsing (including chunked bodies); configurable per-file and page limits; 40 MP pixel cap; PDFs parsed and images fully decoded at import; damaged/encrypted files rejected with codes. |
+| Storage | Originals stored under generated 32-hex identifiers, never the submitted name; names sanitised for display. |
+| Database | Parameterised SQL everywhere; dynamic SQL limited to whitelisted fragments (reviewed, annotated); FTS terms quoted as phrases; transactions with version checks prevent lost updates. |
+| Export | CSV cells beginning with `= + - @` or control characters are prefixed to prevent formula injection. |
+| Integration | Delivery only after explicit authorisation; endpoint restricted to `http://127.0.0.1/localhost`; no redirects followed; proxies ignored; payload contract validated on both sides; idempotency keys. |
+| Backup restore | Archive members validated against a strict pattern (no traversal or unexpected files), size-capped, SQLite `integrity_check` before applying, safety backup first. |
+| Settings | Every key typed and bounded; unknown keys rejected; inbox must be an existing absolute local folder (no UNC shares); inbox import never moves or deletes files. |
+| Logging | Audit details hold identifiers, counts and codes — no document text, field values or credentials (asserted by a test). Errors shown to users never include stack traces or paths. |
+| Desktop | Tauri webview has no capabilities (no IPC, filesystem or shell). The shell only starts the local service from the project's virtual environment. |
+| Offline | Processing performs no network calls; OCR and workflow tests run with outbound connections denied. |
 
-Before publication run tests, static analysis, dependency advisories, Gitleaks, local heuristic scans with a private external denylist, manual image/PDF inspection, Git history and staged-file review. `scripts/release_audit.py` examines only Git candidates, rejects unexpected binary types and links, verifies fixture hashes, checks PDF attachments/image metadata, and reports rules without printing matched secret values. It cannot prove absence of all personal data or establish ownership.
+## Known limits (threat model)
 
-Operational records, databases, logs, environments, caches, trained models, build output and agent transcripts are excluded. A private investigation report must remain outside the repository. Do not add denylist terms that disclose private organizations to versioned files.
+- Any process running as the same OS user can read the workspace and could obtain a session token from the local service. Storage is not encrypted; the audit trail is not tamper-evident.
+- Reviewer identity is a self-declared label.
+- Parsers (pypdf, pdfium, Pillow) and OCR run in the service process without a sandbox or hard CPU/memory deadline. Do not process hostile files.
+- User-defined regex patterns (≤ 200 characters) run without a timeout; templates are a local, trusted configuration.
+- One service process per workspace.
 
-This source-only portfolio preview was explicitly authorized on 2026-10-29. It does not grant an open-source license or establish legal clearance. New code alone does not remove ownership questions. Broader redistribution, third-party package/model notices and installer distribution require separate review before bundling dependencies.
+## Publication checks (performed for this branch)
 
-## Desktop dependency finding
+Gitleaks over full history and candidate files; `scripts/release_audit.py` with a private denylist kept outside the repository (checks binary types, image EXIF, PDF attachments, fixture hashes, absolute user paths, token/key patterns, remote URL); denylist search over the full Git history; pip-audit; npm audit; manual review of every screenshot (synthetic content only); staged-file review. Automated scans are not proof of absence of all sensitive data and do not establish ownership.
 
-The Rust lockfile audit against OSV reported `block-buffer 0.10.4` / [GHSA-qwgh-2vcv-g2f7](https://github.com/advisories/GHSA-qwgh-2vcv-g2f7). It is reached through `digest → sha2 → tauri-codegen → tauri-macros`, a build dependency chain. Upstream reports a fix at 0.12.1, outside the current 0.10 dependency constraint. No unreviewed dependency patch or false clean result was substituted. Desktop distribution remains blocked pending compatible upstream remediation or a reviewed mitigation.
+## Desktop dependency advisory
 
-The all-platform lockfile additionally reports [glib unsoundness](https://rustsec.org/advisories/RUSTSEC-2024-0429.html) and [unmaintained proc-macro-error](https://rustsec.org/advisories/RUSTSEC-2024-0370.html); `cargo tree --target x86_64-pc-windows-msvc -i` returned no matching active Windows dependency for those two crates. Cross-platform distribution requires its own review. The tested browser application does not execute Rust dependencies.
+`block-buffer 0.10.4` ([GHSA-qwgh-2vcv-g2f7](https://github.com/advisories/GHSA-qwgh-2vcv-g2f7)) is still reached via `digest → sha2 → tauri-codegen → tauri-macros`, a compile-time proc-macro chain (re-verified with `cargo tree -i` on 2026-10-29). The fix is in 0.12, outside the constraint used upstream. No unreviewed patch is applied; desktop binary distribution remains blocked until upstream remediation or a reviewed mitigation. `glib` and `proc-macro-error` advisories apply only to non-Windows targets.

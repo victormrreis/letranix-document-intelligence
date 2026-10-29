@@ -1,78 +1,135 @@
-# LETRANIX â€” Document Intelligence Platform
+<p align="center"><img src="docs/assets/banner.svg" alt="LETRANIX — Document Intelligence Platform" width="100%"></p>
 
-**Do documento bruto ao dado confiÃ¡vel.**
+**From raw document to reviewed data — on your own machine.** LETRANIX imports PDFs, scans, photos and text files, runs **local OCR**, extracts **typed fields with per-field evidence**, sends every result through **assisted human review**, **learns from the corrections** in a way that is measured, and delivers approved records to external systems through an **idempotent outbox** — with a complete audit trail.
 
-A local-first document workspace that turns raw text, PDFs and images into structured fields, then requires a recorded human decision before an explicit local demonstration integration.
+> Source-available portfolio project. No open-source license is granted (see [rights](docs/THIRD_PARTY.md)). All documents, names and figures in this repository are synthetic. [Português](docs/README_PT.md)
 
-**Source-only portfolio preview. No open-source license has been granted. Desktop binary distribution remains blocked by a documented build dependency advisory; see [security](docs/SECURITY.md).** [PortuguÃªs](docs/README_PT.md) Â· [Setup](docs/GETTING_STARTED.md) Â· [Validation](docs/VALIDATION.md)
+![Assisted review of an OCR'd synthetic inspection report](docs/assets/04-ocr-review.png)
 
-![Synthetic document review](docs/screenshots/laptop.png)
+## Key features
 
-## What works
+| | |
+|---|---|
+| **Document hub** | Drag-and-drop or folder-inbox import, SHA-256 deduplication, full-text search (SQLite FTS5) over names, OCR text and field values, filters by type/status/date/issues, pagination, batch processing, archive and confirmed deletion, CSV/JSON export. |
+| **OCR pipeline** | Content-based format detection (PDF, PNG, JPEG, multi-page TIFF, WebP, UTF-8 text), embedded PDF text when present, rendering of scanned PDF pages, measured preprocessing (grayscale, contrast, median denoise, deskew, upscaling), automatic 90/180/270° orientation recovery, background job queue with progress, cancellation and crash recovery. |
+| **Structured extraction** | Template-driven fields (`text`, `identifier`, `date`, `number`, `money`, `enum`), label variants, accent/space-tolerant matching, forms with the value *below* the label, line-item tables, date/amount normalisation, regex/enum validation, ambiguity detection. Every value states whether it was **read from a label**, **inferred** or **not found** — nothing is invented. |
+| **Assisted review** | Page viewer with OCR boxes and evidence highlighting, low-confidence lines flagged, candidate pickers, inconsistency flags, editable tables, drafts that survive reloads, approve/reject with reason, reopen, per-field provenance (`confirmed` / `corrected` / `entered`). |
+| **Learning from review** | Corrections become rules (new labels, recurring value fixes, OCR character confusions) that activate after N confirmations and disable themselves when contradicted; a Naive Bayes classifier learns document types from approvals. **Measured: test field accuracy 54.4% → 95.3%, 0 invented values.** |
+| **Integrations** | Adapter contract (`letranix.record/v1`), persistent outbox, retries with exponential backoff, permanent vs transient failures, idempotency keys, a local ledger and a real HTTP adapter against a bundled fictitious records API. |
+| **Audit & settings** | Global, filterable audit of every operation (identifiers only, never document text); validated settings that change behaviour; backup and safe restore; versioned database migrations. |
+| **Desktop** | Tauri 2 shell that starts and stops the local service itself; no IPC, filesystem or shell capabilities granted to the webview. |
 
-- Import UTF-8 text, native-text PDF, PNG and JPEG; identify content signatures, deduplicate by SHA-256 and store originals under generated identifiers.
-- Local image OCR with an optional RapidOCR/ONNX Runtime installation. No document is submitted to an external service.
-- Extract five labeled fields: reference, organization, category, date and description. Flag repeated labels and missing evidence without inventing accuracy percentages.
-- Search document names and extracted text; filter by extraction category or workflow status.
-- Compare the source with extracted fields, correct values, approve or reject with reviewer/reason, and preserve both automatic and human results.
-- Preview all approved fields before explicitly creating a record in the local demo ledger. Approval alone never integrates.
-- Persist processing jobs, review versions and an application-level audit trail in SQLite; reject stale decisions and repeated integration.
-- Responsive React UI; optional Tauri 2 desktop window connecting to the separately running local service.
+## Gallery
 
-## Quick start â€” Windows / Python 3.12 / Node 24
+| Overview | Documents | Fields and line items |
+|---|---|---|
+| ![Overview](docs/assets/01-overview.png) | ![Document hub](docs/assets/03-documents.png) | ![Invoice fields and table](docs/assets/05-fields-table.png) |
+| **Review history** | **Integrations** | **Learning** |
+| ![History](docs/assets/06-history.png) | ![Integrations](docs/assets/07-integrations.png) | ![Learning evaluation](docs/assets/09-learning.png) |
+| **Audit trail** | **Document types** | **Settings** |
+| ![Audit](docs/assets/08-audit.png) | ![Templates](docs/assets/10-types.png) | ![Settings](docs/assets/11-settings.png) |
 
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip==26.2.2
-.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
-npm ci
-npm run build
-.\.venv\Scripts\python.exe -m letranix demo
-.\.venv\Scripts\python.exe -m letranix serve
-```
+All screenshots are captured automatically by the end-to-end test suite (`LETRANIX_SCREENSHOTS=1 npm run test:e2e`) from a fresh workspace using generated synthetic documents.
 
-Open [http://127.0.0.1:8795](http://127.0.0.1:8795). The demo command generates five exclusively synthetic fixtures and seeds a local workspace without deleting existing records. Source images await real OCR; text and PDF samples start awaiting human review. Installation downloads dependencies; processing is local afterward.
+## OCR in action
+
+![Recorded run: import, background OCR, review, delivery](docs/assets/demo.gif)
+
+The animation is a 2.5× speed-up of a real recorded Playwright run (no mock-ups): four synthetic documents are imported, processed in the background queue — including a two-page scanned PDF — then reviewed and delivered. In the review screenshot above, the page was deskewed by −2.0°, each OCR line has a box with the engine's own recognition score, and the focused field's evidence is highlighted on the page.
+
+## Assisted review
+
+1. Each field shows its value, where it came from (page, line, box), the rule that produced it and any issues (missing, invalid format, ambiguous, low OCR score).
+2. The reviewer corrects, picks a candidate or flags an inconsistency; edits are kept as a local draft until a decision is saved.
+3. Approval validates every field against the document type (required, format, allowed options) and refuses while a flag is open; rejection requires a reason.
+4. The decision stores per-field provenance and, if approved, feeds the learning rules. Approval **never** sends data anywhere — delivery is a separate, explicit authorisation.
+
+See [docs/REVIEW_WORKFLOW.md](docs/REVIEW_WORKFLOW.md).
 
 ## Architecture
 
-React + TypeScript + Vite â†’ same-origin FastAPI â†’ bounded format recognition and native extraction / optional OCR â†’ SQLite + local original files. Tauri is an optional shell, with no filesystem or shell IPC grants; it is not a bundled standalone Python installer.
-
 ```mermaid
 flowchart LR
-  A[Import synthetic document] --> B[Signature and size checks]
-  B --> C[Local extraction or OCR]
-  C --> D[Fields and source evidence]
-  D --> E[Human correction and decision]
-  E --> F[Explicit preview and authorization]
-  F --> G[Local demo integration ledger]
-  C --> H[(SQLite jobs and audit)]
-  E --> H
-  G --> H
+  subgraph Desktop["Tauri 2 shell (optional)"]
+    W[WebView]
+  end
+  B[Browser] --> UI
+  W --> UI
+  UI[React 19 + TypeScript SPA] -->|same-origin, session token| API[FastAPI loopback API]
+  API --> S[Service layer]
+  S --> Q[[Job worker]]
+  Q --> OCR[Format detection, PDF render, preprocessing, RapidOCR]
+  OCR --> X[Template extraction + learned rules + classifier]
+  S --> DB[(SQLite WAL: documents, pages, reviews, rules, outbox, audit, FTS5)]
+  S --> F[(Original files and page images)]
+  S --> O[[Outbox worker]]
+  O --> L[Local ledger]
+  O -->|HTTP + Idempotency-Key| M[Fictitious records API]
 ```
 
-## Validation
+More diagrams (OCR pipeline, review state machine, data model, delivery sequence) in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Technologies
+
+Python 3.12 · FastAPI · SQLite (WAL, FTS5, versioned migrations) · RapidOCR on ONNX Runtime (CPU, offline) · pypdf + pypdfium2 · Pillow/NumPy · React 19 · TypeScript · Vite · Tauri 2 (Rust) · pytest · Playwright · Ruff · Bandit · ESLint · Prettier · Gitleaks · pip-audit.
+
+## Installation
+
+Windows, Python 3.12, Node 24. Rust and WebView2 are needed only for the desktop shell.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe -m ruff check letranix tests scripts
-.\.venv\Scripts\python.exe -m bandit -r letranix -q
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+npm ci
 npm run build
-npm run lint
-.\.venv\Scripts\python.exe scripts/release_audit.py --expected-remote https://github.com/victormrreis/letranix-document-intelligence.git
 ```
 
-The optional OCR test skips when its engine is absent. Browser tests require the service on port 8796 and a fresh synthetic workspace; see [validation](docs/VALIDATION.md). No CI success badge is displayed: remote CI has not run.
+`requirements.txt` is the minimal runtime set; `requirements-ocr.txt` adds the OCR engine; `requirements-lock.txt` is the exact validated environment.
 
-## Scope and limitations
+## Running
 
-This is a single-user local evaluation application. The reviewer label is self-declared, not authenticated identity; the audit trail is not cryptographically tamper-proof. Local storage is not encrypted by the application. Use synthetic inputs, not confidential production records. Hostile PDFs/images are not processed in a sandbox; document parsers can require substantial resources.
+```powershell
+.\.venv\Scripts\python.exe -m letranix demo                       # generate and import six synthetic documents
+.\.venv\Scripts\python.exe -m letranix serve --with-destination   # http://127.0.0.1:8795 (+ demo API on :8797)
+```
 
-Native-text PDFs have a 30-page limit. Scanned PDFs require page export to supported images. Handwriting recognition is experimental; the fixture uses rendered handwriting-style text, not a human handwriting benchmark. Extraction is label-based, not a trained document classifier or generative AI model. Corrections are retained for review history and do not train or update a model. No corporate integration, external service, batch approval or silent automation is included.
+Desktop: `cargo build --manifest-path src-tauri/Cargo.toml`, then run `src-tauri\target\debug\letranix-desktop.exe` — it reuses a running service or starts one from `.venv` and stops it on exit. Other commands: `letranix evaluate` (learning benchmark), `letranix benchmark` (OCR preprocessing), `letranix mock-destination`. Details in [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
-## Documentation and roadmap
+## Tests
 
-[Architecture](docs/ARCHITECTURE.md) Â· [OCR pipeline](docs/OCR_PIPELINE.md) Â· [Review workflow](docs/REVIEW_WORKFLOW.md) Â· [Security](docs/SECURITY.md) Â· [Demo script](docs/DEMO.md) Â· [Dependencies and rights](docs/THIRD_PARTY.md) Â· [Contributing](docs/CONTRIBUTING.md)
+| Suite | Command | Last local result |
+|---|---|---|
+| Backend: unit, service, API, real OCR, real HTTP integration, migration, backup | `python -m pytest -q` | **75 passed** |
+| Browser end-to-end on a fresh workspace | `npm run test:e2e` | **3 passed** |
+| Static checks | `npm run typecheck`, `npm run lint`, `npm run format:check`, `ruff check`, `bandit -r letranix` | clean |
+| Learning benchmark | `python -m letranix evaluate` | [learning.json](docs/evaluation/learning.json) |
+| OCR preprocessing benchmark | `python -m letranix benchmark` | [ocr-preprocessing.json](docs/evaluation/ocr-preprocessing.json) |
+| Performance | `python scripts/perf.py` | [performance.json](docs/evaluation/performance.json) |
 
-Next engineering steps: sandboxed parsing with execution budgets, encrypted storage, resumable background jobs and page-level evidence coordinates, accessibility audit, measured handwriting evaluation, and a signed desktop installer with a managed Python sidecar. None is presented as delivered.
+What each test covers, what is *not* covered and the measured figures are in [docs/VALIDATION.md](docs/VALIDATION.md). A feature-by-feature status matrix is in [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 
-Repository: [victormrreis/letranix-document-intelligence](https://github.com/victormrreis/letranix-document-intelligence). Topics: `document-intelligence`, `ocr`, `python`, `react`, `typescript`, `tauri`, `sqlite`, `human-in-the-loop`, `local-first`. No installers, runtime databases or OCR model weights are distributed in this repository.
+## Security and privacy
+
+- Binds to `127.0.0.1` only; Host and Origin checks, per-start session token, no CORS, strict CSP, `nosniff`, attachment downloads.
+- No document content leaves the machine. The only outbound HTTP is the explicit delivery to an endpoint restricted to loopback, without redirects.
+- Storage paths are generated identifiers; uploads are size/page/pixel bounded before parsing; damaged files are rejected at import.
+- Parameterised SQL and quoted FTS terms; CSV export neutralises formula injection; backup restore validates archive members.
+- Audit entries contain identifiers and codes, never document text (asserted by a test).
+
+Limits and the threat model are in [docs/SECURITY.md](docs/SECURITY.md).
+
+## Roadmap
+
+- Sandboxed parsing with CPU/memory budgets per document.
+- Encrypted workspace storage and authenticated multi-user reviewers.
+- Packaged installer with an embedded Python runtime (blocked today, see limitations).
+- A second OCR engine (Tesseract) behind the existing engine setting, with a comparative benchmark.
+- Handwriting evaluation on a licensed or self-collected dataset.
+
+## Known limitations
+
+- **OCR quality**: the bundled PP-OCR model sometimes drops spaces in large text; only `lowercaseUppercase` boundaries are repaired ("CarlaModelo" → "Carla Modelo"), while lowercase run-ons remain for the reviewer. Handwriting is not evaluated. The preprocessing benchmark uses 10 synthetic images — enough to pick defaults, not to claim general accuracy.
+- **Learning** is rule- and statistics-based (aliases, value/character maps, Naive Bayes). It is not a neural model and is measured only on synthetic data.
+- **Single user, single process per workspace**; reviewer names are self-declared; storage is not encrypted; parsers are not sandboxed.
+- **Desktop**: the shell needs the repository's `.venv` (no embedded Python). Desktop binary distribution remains blocked by a documented build-time Rust advisory (`block-buffer 0.10.4` through `tauri-codegen`); no installer is published.
+- **Rights**: no open-source license is granted; see [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md).

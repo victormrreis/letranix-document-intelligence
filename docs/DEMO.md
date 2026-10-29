@@ -1,14 +1,17 @@
-# Three-minute demonstration
+# Five-minute demonstration
 
-Use a fresh local workspace and generated files only. Generate with `python -m letranix demo --data .runtime/presentation`, start the service with that data path, and open the UI.
+Use a fresh workspace and generated files only: `python -m letranix demo --data .runtime/presentation`, then `python -m letranix serve --data .runtime/presentation --with-destination`.
 
-| Time | Real action |
+| Time | Action (all real) |
 |---|---|
-| 0:00–0:25 | Show the local library and explain that examples are invented and processing stays on this computer. |
-| 0:25–1:00 | Select `operational-report.png`, click Process document and wait for actual local OCR. Show the source and extracted text/fields. OCR must be installed; do not simulate success if it is missing. |
-| 1:00–1:40 | Compare all fields, correct any OCR errors, identify the reviewer and enter a reason. Approve the review. Point out that approval did not execute integration. |
-| 1:40–2:10 | Open the local integration preview, inspect every field, explicitly authorize and show the saved local record. |
-| 2:10–2:40 | Open Audit trail and inspect processing, human decision and integration. Search the library by reference or extracted text. |
-| 2:40–3:00 | Reload and reopen the document to demonstrate persistence. State that handwriting is experimental and no model training is implemented. |
+| 0:00 | **Overview** — live counts from the database; six synthetic documents already processed in the background. |
+| 0:30 | **Documents** — search "Records Office" (matches OCR text of a scanned PDF); filter by type; show the issue counts. |
+| 1:00 | Open `inspection-report.png` — page deskewed by −2°, OCR boxes with scores; click a field's evidence to highlight it on the page. |
+| 1:40 | Correct *Notes*, reload the page to show the restored draft, write a note and **Approve**. History shows per-field provenance. |
+| 2:20 | Open `rotated-field-form.jpg` — orientation recovered; fields read *below* their labels. Flag an inconsistency and show that approval is blocked. |
+| 3:00 | Settings → Destination `http-demo`. Back on the approved document: **Send to destination**, preview, authorise. Integrations shows *delivered* and the record read back from the fictitious API. |
+| 3:40 | Inject `POST :8797/admin/faults?count=1&status=503`, send another approved document: the outbox schedules a retry and then delivers. |
+| 4:20 | **Learning → Run evaluation** — before/after accuracy on a held-out synthetic test split. |
+| 4:50 | **Audit trail** — every step, without document content. |
 
-To demonstrate import separately, use Import documents with one of the generated files. Importing identical bytes returns the existing document. To show a second processing version choose Reprocess; it invalidates the current approval for future integration and requires new review. Do not approve deliberately incorrect OCR values just to finish the presentation.
+Do not approve wrong values to finish faster; the point is that the reviewer decides.
