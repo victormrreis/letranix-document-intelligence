@@ -1,37 +1,50 @@
 # Executed validation — 2026-10-29
 
-Local Windows evaluation, Python 3.12, Node 24.21.0. These are executed results, not a remote CI claim.
+Local run on Windows 11, Python 3.12.10, Node 24.21.0, Rust 1.98.1 (8 logical CPUs). These are executed results; GitHub Actions results are separate and appear on the pull request.
 
-| Check | Result |
-|---|---|
-| Backend functional/regression suite | 27 passed; real local image OCR included; no skipped tests in this environment |
-| Browser workflows | 2 passed, including import, OCR, correction, approval, explicit integration, reload, search, reprocessing and integration of a new reviewed version |
-| Layout | 1920×1080, 1366×768, 911×512 (equivalent CSS viewport for 150% at laptop resolution), 390×844; no horizontal overflow asserted |
-| Frontend | TypeScript check, production Vite build, ESLint and Prettier check passed |
-| Python | Ruff lint/format and Bandit passed |
-| SQLite | Integrity and foreign-key consistency checked in demo tests; restart persistence and interrupted-job recovery passed |
-| Strict isolation | Independent source copy run in Python isolated mode; original-path reads and external connections denied by an audit hook. Image import, real offline OCR, review, explicit integration and restart passed; zero original access attempts |
-| Native desktop | Cargo check and debug build passed; independently built Tauri window opened and displayed five synthetic documents |
-| Python advisories | pip-audit reported no known vulnerabilities after upgrading the virtual environment's pip to 26.2.2 |
-| npm advisories | npm audit reported no known vulnerabilities |
-| Rust advisories | 405 registry packages queried through OSV; 3 affected package names; see SECURITY.md. Desktop distribution blocked |
-| Secrets | Gitleaks 8.30.1 found no leaks in the inspected candidate snapshot; final staged audit recorded privately |
-| Sensitive-reference audit | Local scan with external private terms, credential/identifier heuristics, candidate filenames, binary metadata and fixture hashes; no findings after repairs |
+| Check | Command | Result |
+|---|---|---|
+| Backend suite | `python -m pytest -q` | **75 passed** (≈ 90 s), 0 skipped |
+| Browser E2E | `npm run test:e2e` | **3 passed** (≈ 75 s) |
+| TypeScript | `npm run typecheck` | clean |
+| ESLint (incl. react-hooks rules) | `npm run lint` | clean |
+| Prettier | `npm run format:check` | clean |
+| Ruff | `python -m ruff check letranix tests scripts` | clean |
+| Bandit | `python -m bandit -r letranix` | no issues (4 SQL builders annotated after review: only whitelisted fragments are interpolated) |
+| pip-audit | `python -m pip_audit` | no known vulnerabilities |
+| npm audit | `npm audit` | 0 vulnerabilities |
+| Gitleaks 8.30.1 | history + candidate files | no leaks |
+| Release audit + private denylist | `scripts/release_audit.py --terms-file <private>` | no findings after staging; denylist: 0 matches in files and full history |
+| Tauri | `cargo build` | builds; desktop run verified manually (below) |
 
-The Python suite emits one upstream Starlette deprecation warning about the test client's `httpx` integration. It did not prevent the tests from passing. Native desktop testing established opening/rendering; complete mouse/keyboard workflow automation was validated in Chromium rather than claimed for WebView2. No standalone signed installer was built.
+## What the suites cover
 
-An early OCR fixture using a small fallback font produced letter/digit confusion in its reference. The printed fixture was regenerated with clearer typography; the final real OCR test passed. This is fixture-specific validation, not an OCR quality benchmark. The handwritten-style and degraded examples are available for exploration but no accuracy claim is made for them.
+**pytest** (`tests/`): extraction units (dates, amounts, enums, labels, prose rejection, optional-field non-invention, ambiguity, layout label-below with OCR boxes, low-score flag, tables, learned rules, template validation); full flow with correction → provenance → corrections → restart persistence; invalid inputs (empty, unsupported, control characters, corrupt PDF, truncated PNG, encrypted PDF, size and page limits); OCR disabled and empty images; review validation (stale version, bad date/enum, missing required, missing reason, extra field, flagged field); reject → reopen → approve; reprocessing invalidating approval; type change without OCR; local ledger idempotency; rejected reviews cannot integrate; cancellation of queued and running jobs; crash recovery (requeue, then fail); background worker; alias learning with support threshold, confirmation and contradiction auto-disable; classifier learning a custom type; template rules; settings validation and effect (limits, endpoint loopback-only, inbox); FTS search, filters, pagination and FTS/SQL syntax as data; archive/delete with retained audit; CSV formula-injection neutralisation; audit free of document content; backup → delete → restore and zip traversal rejection; API boundaries (token, Host, Origin, body cap); migration of a genuine v0.1 database; offline operation; learning evaluation gain.
+**Real OCR** (`test_ocr.py`): skewed image (deskew recorded, boxes, scores), two-page scanned PDF rendered and OCRed, rotated low-quality form (orientation recovered, label-below fields), native PDF table — all with network access denied.
+**Real HTTP** (`test_integration_http.py`): the fictitious API runs on a real port; delivery and contract, injected 503 then retry, re-delivery after a simulated crash returns `duplicate`, injected 422 → failed → manual retry, unreachable destination exhausting attempts.
+**E2E** (`tests/browser`): settings change, multi-file import, background OCR, field values, draft restored after reload, approval, history provenance, explicit send, delivery confirmed in the UI *and* directly at the destination, CSV download content, reload persistence; multi-page viewer, table values, flag blocking approval, search, audit, learning evaluation from the UI, no horizontal overflow at 1920×1080, 1366×768 and 390×844; damaged-file error message.
 
-Screenshots under `screenshots/` come from automated browser interaction using only generated examples. Python tests use temporary evaluation workspaces; browser tests start their own fresh local service and workspace automatically:
+## Desktop run (manual, recorded)
 
-```powershell
-.\.venv\Scripts\python.exe -m letranix fixtures
-npx playwright install chromium
-npm run test:e2e
-```
+With nothing on port 8795, `letranix-desktop.exe` started the service hidden; `/api/health` answered after 4.5 s; the window titled "LETRANIX - Document Intelligence Platform" displayed the workspace; closing the window stopped the child service (port closed). That workspace was a v0.1 workspace and was migrated to schema 2 on open. Full mouse/keyboard automation of WebView2 was not performed; UI flows are validated in Chromium against the same frontend and service.
 
-The browser suite creates ignored `.runtime/browser-*` workspaces, preserving them for inspection; it does not delete existing data. Do not run another service on port 8796 during that suite.
+## Measurements
 
-## Publication state
+| Measure | Value | Source |
+|---|---|---|
+| OCR per image page (1500×700, default preprocessing) | ≈ 2.0 s | [ocr-preprocessing.json](evaluation/ocr-preprocessing.json) |
+| OCR per scanned A4 page at 200 DPI | ≈ 6 s | job timings of `scanned-request.pdf` |
+| Text document through the full pipeline | 12.7 documents/s | [performance.json](evaluation/performance.json) |
+| Import (hash, validate, store, index) | 15 ms / document | same |
+| Search, 300 documents (median / p95) | 5.2 ms / 13 ms | same |
+| Workspace open | 23–40 ms | same |
+| Peak memory, 300 text documents (no OCR model) | 44 MB | same |
+| Desktop: service ready after launch | 4.5 s | manual run |
+| Learning: test field accuracy before → after | 54.4% → 95.3% | [learning.json](evaluation/learning.json) |
 
-**SOURCE-ONLY PORTFOLIO PREVIEW, authorized on 2026-10-29.** No open-source license is granted and publication is not a legal clearance statement. Application licensing and any broader distribution rights remain under review. The Tauri build dependency advisory still blocks desktop binary distribution pending compatible upstream remediation or a reviewed mitigation. Dependency and secret scanners are not proof of complete safety. Git was initialized independently, without inherited history; the public source contains only the reviewed application, synthetic examples and documentation. Local results above are distinct from GitHub Actions results.
+## Not covered
+
+- Real handwriting; non-Latin scripts; very large (> 30 page) scanned documents beyond the configured limit.
+- Native WebView2 interaction automation; installer packaging.
+- Hostile-input fuzzing and parser sandboxing.
+- Remote CI on this branch until it runs on GitHub.

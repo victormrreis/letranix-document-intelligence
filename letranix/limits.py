@@ -2,7 +2,7 @@
 
 from starlette.responses import JSONResponse
 
-from .processing import MAX_BYTES
+MAX_BYTES = 50 * 1024 * 1024  # Hard cap; the configured per-file limit is enforced by the service.
 
 
 class RequestBodyLimit:

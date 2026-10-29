@@ -1,0 +1,94 @@
+{
+  "generated": "2026-10-29T15:08:52",
+  "engine": "rapidocr-onnxruntime 1.4.4 (CPU)",
+  "images": 10,
+  "degradations": [
+    "clean",
+    "skew",
+    "low-contrast",
+    "noise",
+    "small-blur"
+  ],
+  "configs": {
+    "none": {},
+    "gray+contrast": {
+      "grayscale": true,
+      "autocontrast": true
+    },
+    "gray+contrast+deskew": {
+      "grayscale": true,
+      "autocontrast": true,
+      "deskew": true
+    },
+    "gray+contrast+deskew+upscale": {
+      "grayscale": true,
+      "autocontrast": true,
+      "deskew": true,
+      "upscale": true
+    },
+    "all+denoise": {
+      "grayscale": true,
+      "autocontrast": true,
+      "deskew": true,
+      "upscale": true,
+      "denoise": true
+    }
+  },
+  "results": {
+    "none": {
+      "mean_cer": 0.0183,
+      "mean_seconds": 2.74,
+      "cer_by_degradation": {
+        "clean": 0.0079,
+        "skew": 0.0,
+        "low-contrast": 0.0039,
+        "noise": 0.0119,
+        "small-blur": 0.0676
+      }
+    },
+    "gray+contrast": {
+      "mean_cer": 0.0175,
+      "mean_seconds": 2.34,
+      "cer_by_degradation": {
+        "clean": 0.0039,
+        "skew": 0.0,
+        "low-contrast": 0.0039,
+        "noise": 0.0079,
+        "small-blur": 0.0716
+      }
+    },
+    "gray+contrast+deskew": {
+      "mean_cer": 0.0175,
+      "mean_seconds": 1.92,
+      "cer_by_degradation": {
+        "clean": 0.0039,
+        "skew": 0.0,
+        "low-contrast": 0.0039,
+        "noise": 0.0079,
+        "small-blur": 0.0716
+      }
+    },
+    "gray+contrast+deskew+upscale": {
+      "mean_cer": 0.0119,
+      "mean_seconds": 2.11,
+      "cer_by_degradation": {
+        "clean": 0.0039,
+        "skew": 0.0,
+        "low-contrast": 0.0039,
+        "noise": 0.0079,
+        "small-blur": 0.0438
+      }
+    },
+    "all+denoise": {
+      "mean_cer": 0.0087,
+      "mean_seconds": 1.98,
+      "cer_by_degradation": {
+        "clean": 0.0,
+        "skew": 0.0,
+        "low-contrast": 0.0,
+        "noise": 0.0079,
+        "small-blur": 0.0357
+      }
+    }
+  }
+}

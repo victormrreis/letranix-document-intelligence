@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-labelledby="t d">
+  <title id="t">LETRANIX — Document Intelligence Platform</title>
+  <desc id="d">Local-first OCR, structured extraction and auditable human review.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11142a"/>
+      <stop offset="1" stop-color="#2a2370"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="260" rx="18" fill="url(#bg)"/>
+  <g fill="none" stroke="#8b83ff" stroke-opacity="0.25">
+    <rect x="860" y="40" width="250" height="180" rx="10"/>
+    <path d="M885 80h150M885 110h200M885 140h120M885 170h170"/>
+    <rect x="880" y="100" width="215" height="22" rx="4" stroke="#4ccf8e" stroke-opacity="0.9" stroke-width="2"/>
+  </g>
+  <rect x="70" y="78" width="96" height="96" rx="22" fill="#8b83ff"/>
+  <path d="M100 102v52h40" stroke="#11142a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="196" y="132" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="58" font-weight="800" letter-spacing="8" fill="#ffffff">LETRANIX</text>
+  <text x="198" y="172" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="22" fill="#c9c6ff">Document Intelligence Platform · local OCR · human-reviewed data</text>
+</svg>

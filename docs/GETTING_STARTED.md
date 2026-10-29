@@ -1,19 +1,51 @@
 # Getting started
 
-Use Windows with Python 3.12, Node 24 and npm. The tested environment is recorded in VALIDATION.md. Create a new virtual environment; do not reuse operational environments or import existing databases. `requirements-lock.txt` captures the validated Python dependency set including the optional OCR engine and development tools. `requirements.txt` is the smaller runtime set; `requirements-ocr.txt` adds OCR. Keep the lockfile for reproduction.
+Requirements: Windows with Python 3.12 and Node 24 (validated). Rust (MSVC toolchain) and WebView2 only for the desktop shell. Linux/macOS should work for the service but are not validated.
 
-Run the commands in the README from the repository root. The app binds only to `127.0.0.1`. The frontend build and API share the same origin; no cross-origin development proxy is configured. For frontend development run `npm run build` after edits and use the local service, or use Vite for visual development without API connectivity.
-
-Data defaults to `.runtime/workspace` and never belongs in Git. Override with `--data <new-evaluation-directory>` or `LETRANIX_DATA`. `--port` overrides `LETRANIX_PORT`. The `.env.example` documents names; dotenv files are not automatically loaded. Demo generation is explicit:
+## Install
 
 ```powershell
-.\.venv\Scripts\python.exe -m letranix fixtures
-.\.venv\Scripts\python.exe -m letranix demo --data .runtime/demo
-.\.venv\Scripts\python.exe -m letranix serve --data .runtime/demo --port 8795
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+npm ci
+npm run build
 ```
 
-The seed command adds only missing content hashes; it does not reset or delete data. Changing fixture fonts between hosts can change image hashes. Never point it at a pre-existing operational folder. Back up an evaluation workspace only while the service is stopped, copying both database and document files together.
+`requirements.txt` is the runtime minimum (no OCR); add `requirements-ocr.txt` for image OCR; `requirements-lock.txt` is the exact validated set including test and audit tools.
 
-For the optional desktop shell install Rust/MSVC C++ build tools and WebView2, start the service on port 8795, then run `npm run tauri -- dev`. The shell does not start or package Python. `cargo check --manifest-path src-tauri/Cargo.toml` checks Rust compilation. Installer creation and signing are intentionally pending.
+## Run
 
-Stop the local service with Ctrl+C. Restart with the same `--data` path to retain documents and decisions; the browser session token changes at each service start. Reload the browser to establish a new local session.
+```powershell
+.\.venv\Scripts\python.exe -m letranix demo                      # synthetic fixtures → demo/synthetic, imported into .runtime/workspace
+.\.venv\Scripts\python.exe -m letranix serve --with-destination  # UI + API on http://127.0.0.1:8795, demo records API on :8797
+```
+
+| Command | Purpose |
+|---|---|
+| `serve [--data DIR] [--port N] [--with-destination]` | Start the service (and optionally the fictitious records API on `port + 2`). |
+| `demo [--data DIR]` | Generate fixtures and import any not yet present (never deletes). |
+| `fixtures` | Only regenerate `demo/synthetic` and its hash manifest. |
+| `mock-destination [--port N] [--data DIR]` | Run the fictitious records API alone. |
+| `evaluate [--output FILE]` | Learning benchmark (train / validation / test). |
+| `benchmark [--output FILE]` | OCR preprocessing benchmark. |
+
+`LETRANIX_DATA` and `LETRANIX_PORT` override the defaults. Data lives in the workspace folder (`letranix.db`, `documents/`, `pages/`, `backups/`) and never belongs in Git.
+
+## Demo integration over HTTP
+
+Start with `--with-destination`, then *Settings → Integration → Destination = http-demo* (endpoint `http://127.0.0.1:8797/records`). Approve a document, choose *Send to destination*, and check *Integrations → Records held by the destination*. Inject failures to see retries: `POST http://127.0.0.1:8797/admin/faults?count=2&status=503`.
+
+## Desktop
+
+```powershell
+cargo build --manifest-path src-tauri/Cargo.toml
+.\src-tauri\target\debug\letranix-desktop.exe
+```
+
+The shell reuses a running service or starts `.venv` Python with `-m letranix serve` from the project root (override with `LETRANIX_HOME` / `LETRANIX_PYTHON`) and stops it when the window closes. `npm run tauri -- dev` also works with a running service.
+
+## Develop
+
+Python lint/format: `ruff check`, `ruff format`. Frontend: `npm run typecheck`, `npm run lint`, `npm run format`. Tests: `python -m pytest -q`, `npm run test:e2e` (starts its own service on port 8805 and destination on 8807 with a fresh workspace under `.runtime/`). Regenerate README screenshots and the GIF: `LETRANIX_SCREENSHOTS=1 LETRANIX_VIDEO=1 npm run test:e2e` then `python scripts/make_demo_gif.py` (needs ffmpeg).
+
+Backups are created and restored from *Settings*; they can be taken while the service runs.

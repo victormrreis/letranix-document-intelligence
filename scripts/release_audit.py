@@ -5,7 +5,7 @@ import hashlib
 import io
 import json
 import re
-import subprocess
+import subprocess  # nosec B404 - fixed git invocations
 from pathlib import Path
 
 from PIL import Image
@@ -75,10 +75,10 @@ def audit(terms_file=None, expected_remote=None):
             findings.append({"path": name, "rule": "runtime-or-vendored-artifact"})
         raw = p.read_bytes()
         text = ""
-        if p.suffix in {".png", ".jpg", ".jpeg", ".ico"}:
+        if p.suffix in {".png", ".jpg", ".jpeg", ".ico", ".gif"}:
             if not (
                 name.startswith("demo/synthetic/")
-                or name.startswith("docs/screenshots/")
+                or name.startswith("docs/assets/")
                 or name in {"src-tauri/icons/icon.ico", "src-tauri/icons/icon.png"}
             ):
                 findings.append({"path": name, "rule": "unapproved-image-location"})

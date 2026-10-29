@@ -1,0 +1,17 @@
+{
+  "generated": "2026-10-29T15:46:58",
+  "environment": {
+    "python": "3.12.10",
+    "os": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 8
+  },
+  "documents": 300,
+  "workspace_create_ms": 289.5,
+  "workspace_reopen_ms": 17.5,
+  "import_per_document_ms": 16.64,
+  "text_processing_docs_per_second": 12.7,
+  "search_median_ms": 5.16,
+  "search_p95_ms": 9.34,
+  "filter_query_ms": 7.78,
+  "peak_memory_mb": 44.1
+}

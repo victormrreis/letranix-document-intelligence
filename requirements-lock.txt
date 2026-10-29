@@ -47,6 +47,7 @@ pydantic_core==2.50.2
 Pygments==2.21.0
 pyparsing==3.3.3
 pypdf==6.21.4
+pypdfium2==5.14.0
 pytest==9.2.0
 python-discovery==1.6.7
 python-multipart==0.0.32

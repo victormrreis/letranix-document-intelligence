@@ -1,0 +1,94 @@
+{
+  "generated": "2026-10-29T15:09:14",
+  "method": "Synthetic text documents; exact match on normalised values; separate seeds per split.",
+  "splits": {
+    "train": 60,
+    "validation": 30,
+    "test": 60
+  },
+  "seeds": {
+    "train": 11,
+    "validation": 22,
+    "test": 33
+  },
+  "min_support_selection": {
+    "1": 0.9704,
+    "2": 0.9586,
+    "3": 0.8935
+  },
+  "min_support_chosen": 1,
+  "rules_active": {
+    "alias": 29,
+    "char-map": 6,
+    "value-map": 4
+  },
+  "test_before_learning": {
+    "documents": 60,
+    "template_accuracy": 0.85,
+    "field_accuracy": 0.5444,
+    "fields_evaluated": 338,
+    "invented_values": 0,
+    "per_field": {
+      "administrative-request.date": 1.0,
+      "administrative-request.department": 0.733,
+      "administrative-request.protocol": 0.867,
+      "administrative-request.requester": 0.333,
+      "administrative-request.subject": 0.533,
+      "inspection-report.date": 0.6,
+      "inspection-report.inspector": 0.2,
+      "inspection-report.notes": 0.75,
+      "inspection-report.readings": 1.0,
+      "inspection-report.report_id": 0.6,
+      "inspection-report.result": 0.133,
+      "inspection-report.site": 0.4,
+      "invoice.customer": 0.533,
+      "invoice.due_date": 1.0,
+      "invoice.invoice_number": 0.8,
+      "invoice.issue_date": 1.0,
+      "invoice.issuer": 0.533,
+      "invoice.total": 0.6,
+      "service-order.date": 0.333,
+      "service-order.description": 0.333,
+      "service-order.due_date": 0.5,
+      "service-order.location": 0.111,
+      "service-order.order_number": 0.6,
+      "service-order.priority": 0.2,
+      "service-order.requester": 0.4
+    }
+  },
+  "test_after_learning": {
+    "documents": 60,
+    "template_accuracy": 1.0,
+    "field_accuracy": 0.9527,
+    "fields_evaluated": 338,
+    "invented_values": 0,
+    "per_field": {
+      "administrative-request.date": 1.0,
+      "administrative-request.department": 1.0,
+      "administrative-request.protocol": 1.0,
+      "administrative-request.requester": 1.0,
+      "administrative-request.subject": 1.0,
+      "inspection-report.date": 0.933,
+      "inspection-report.inspector": 1.0,
+      "inspection-report.notes": 1.0,
+      "inspection-report.readings": 1.0,
+      "inspection-report.report_id": 0.867,
+      "inspection-report.result": 0.533,
+      "inspection-report.site": 1.0,
+      "invoice.customer": 1.0,
+      "invoice.due_date": 1.0,
+      "invoice.invoice_number": 0.8,
+      "invoice.issue_date": 1.0,
+      "invoice.issuer": 1.0,
+      "invoice.total": 1.0,
+      "service-order.date": 1.0,
+      "service-order.description": 1.0,
+      "service-order.due_date": 1.0,
+      "service-order.location": 1.0,
+      "service-order.order_number": 0.933,
+      "service-order.priority": 0.867,
+      "service-order.requester": 1.0
+    }
+  },
+  "seconds": 7.62
+}

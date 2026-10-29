@@ -32,7 +32,7 @@
   {
     "name": "certifi",
     "version": "2026.10.23",
-    "declared_license": "Mozilla Public License 2.0 (MPL 2.0)"
+    "declared_license": "MPL-2.0"
   },
   {
     "name": "cfgv",
@@ -57,17 +57,17 @@
   {
     "name": "cyclonedx-python-lib",
     "version": "11.12.0",
-    "declared_license": "Apache Software License"
+    "declared_license": "Apache-2.0"
   },
   {
     "name": "defusedxml",
     "version": "0.7.1",
-    "declared_license": "Python Software Foundation License"
+    "declared_license": "PSFL"
   },
   {
     "name": "distlib",
     "version": "0.4.4",
-    "declared_license": "Python Software Foundation License"
+    "declared_license": "PSF-2.0"
   },
   {
     "name": "fastapi",
@@ -82,12 +82,12 @@
   {
     "name": "flatbuffers",
     "version": "25.12.19",
-    "declared_license": "Apache Software License"
+    "declared_license": "Apache 2.0"
   },
   {
     "name": "h11",
     "version": "0.16.0",
-    "declared_license": "MIT License"
+    "declared_license": "MIT"
   },
   {
     "name": "httpcore",
@@ -97,7 +97,7 @@
   {
     "name": "httpx",
     "version": "0.28.1",
-    "declared_license": "BSD License"
+    "declared_license": "BSD-3-Clause"
   },
   {
     "name": "identify",
@@ -137,7 +137,7 @@
   {
     "name": "nodeenv",
     "version": "1.11.0",
-    "declared_license": "BSD License"
+    "declared_license": "BSD"
   },
   {
     "name": "numpy",
@@ -152,7 +152,7 @@
   {
     "name": "opencv-python",
     "version": "5.0.0.93",
-    "declared_license": "Apache Software License"
+    "declared_license": "Apache 2.0"
   },
   {
     "name": "opentelemetry-api",
@@ -162,7 +162,7 @@
   {
     "name": "packageurl-python",
     "version": "0.17.6",
-    "declared_license": "MIT License"
+    "declared_license": "MIT"
   },
   {
     "name": "packaging",
@@ -187,7 +187,7 @@
   {
     "name": "pip_api",
     "version": "0.0.35",
-    "declared_license": "Apache Software License"
+    "declared_license": "Apache License"
   },
   {
     "name": "pip_audit",
@@ -202,7 +202,7 @@
   {
     "name": "pluggy",
     "version": "1.7.0",
-    "declared_license": "MIT License"
+    "declared_license": "MIT"
   },
   {
     "name": "pre_commit",
@@ -217,12 +217,12 @@
   {
     "name": "py-serializable",
     "version": "2.1.0",
-    "declared_license": "Apache Software License"
+    "declared_license": "Apache-2.0"
   },
   {
     "name": "pyclipper",
     "version": "1.4.0",
-    "declared_license": "OSI Approved; MIT License"
+    "declared_license": "MIT"
   },
   {
     "name": "pydantic",
@@ -250,6 +250,11 @@
     "declared_license": "BSD-3-Clause"
   },
   {
+    "name": "pypdfium2",
+    "version": "5.14.0",
+    "declared_license": "BSD-3-Clause, Apache-2.0, dependency licenses"
+  },
+  {
     "name": "pytest",
     "version": "9.2.0",
     "declared_license": "MIT"
@@ -267,7 +272,7 @@
   {
     "name": "PyYAML",
     "version": "6.0.3",
-    "declared_license": "MIT License"
+    "declared_license": "MIT"
   },
   {
     "name": "rapidocr-onnxruntime",
@@ -277,12 +282,12 @@
   {
     "name": "requests",
     "version": "2.34.2",
-    "declared_license": "Apache Software License"
+    "declared_license": "Apache-2.0"
   },
   {
     "name": "rich",
     "version": "15.0.0",
-    "declared_license": "MIT License"
+    "declared_license": "MIT"
   },
   {
     "name": "ruff",
@@ -297,12 +302,12 @@
   {
     "name": "six",
     "version": "1.17.0",
-    "declared_license": "MIT License"
+    "declared_license": "MIT"
   },
   {
     "name": "sortedcontainers",
     "version": "2.4.0",
-    "declared_license": "Apache Software License"
+    "declared_license": "Apache 2.0"
   },
   {
     "name": "starlette",
